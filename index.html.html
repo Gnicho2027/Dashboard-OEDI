@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OEDI | Dashboard Vivo</title>
+<style>
+:root {
+  --bg:#f4f7fb; --card:#fff; --text:#17202a; --muted:#667085;
+  --line:#e4e9ef; --blue:#0b6bcb; --blue2:#eaf3fc; --nav:#102d4a;
+  --green:#2e9d69; --orange:#e79a16; --red:#d64545; --shadow:0 8px 24px rgba(20,50,80,.07);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.layout{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+aside{background:var(--nav);color:white;padding:22px 16px}
+.brand{display:flex;gap:10px;align-items:center;margin-bottom:26px}
+.logo{width:38px;height:38px;border-radius:10px;background:white;color:var(--blue);display:grid;place-items:center;font-weight:900}
+.brand b{font-size:19px} .brand small{display:block;color:#bfd0df;margin-top:2px}
+.nav-btn{width:100%;border:0;background:transparent;color:#d8e2ec;text-align:left;padding:12px;border-radius:9px;margin:3px 0;cursor:pointer;font-size:14px}
+.nav-btn:hover,.nav-btn.active{background:rgba(255,255,255,.12);color:#fff}
+main{padding:26px}
+.header{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:18px}
+h1{margin:0;font-size:25px} .subtitle{font-size:13px;color:var(--muted);margin-top:5px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);cursor:pointer;transition:.15s}
+.metric:hover{transform:translateY(-1px);border-color:#b7cde3}
+.metric.active{outline:2px solid var(--blue);background:#f8fbff}
+.metric .label{font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:700}
+.metric .value{font-size:29px;font-weight:800;margin-top:7px}
+.metric .foot{font-size:12px;color:var(--muted);margin-top:4px}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+.filter-btn{border:1px solid var(--line);background:white;border-radius:999px;padding:9px 13px;cursor:pointer;font-size:13px}
+.filter-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:17px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 13px;font-size:16px}
+.bar-item{display:grid;grid-template-columns:160px 1fr 34px;gap:10px;align-items:center;margin:10px 0;font-size:12px}
+.bar-track{height:11px;background:#edf2f7;border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;background:var(--blue);border-radius:99px}
+.company-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.company-card{border:1px solid var(--line);border-radius:12px;padding:13px;text-align:center;cursor:pointer;background:#fff}
+.company-card:hover,.company-card.active{border-color:var(--blue);background:var(--blue2)}
+.company-card b{display:block;font-size:22px}
+.company-card span{font-size:12px;color:var(--muted)}
+.search-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+input,select{border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:#fff;font-size:13px}
+input{min-width:300px;flex:1}
+.table-wrap{overflow:auto;max-height:470px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:11px 9px;border-top:1px solid var(--line);text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:#f8fafc;color:#475467;z-index:1}
+.badge{display:inline-block;padding:4px 7px;border-radius:999px;background:#eef6ff;color:#175cd3}
+.status{color:#19784e;font-weight:700}
+.status:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px}
+.view{display:none} .view.active{display:block}
+.back{display:none;border:0;background:transparent;color:var(--blue);cursor:pointer;font-weight:700;padding:0;margin-bottom:12px}
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.detail-item{border:1px solid var(--line);border-radius:12px;padding:13px}
+.detail-item span{font-size:11px;color:var(--muted);display:block;margin-bottom:4px}
+.detail-item b{font-size:14px}
+.note{background:#eef6ff;border:1px solid #d7eafc;color:#31506c;padding:13px;border-radius:11px;font-size:13px;margin-top:14px}
+.clickable-row{cursor:pointer} .clickable-row:hover{background:#f7fbff}
+@media(max-width:1000px){.kpis{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+@media(max-width:760px){.layout{grid-template-columns:1fr}aside{display:none}main{padding:15px}.kpis{grid-template-columns:1fr 1fr}.company-grid{grid-template-columns:repeat(2,1fr)}.detail-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside>
+  <div class="brand"><div class="logo">O</div><div><b>OEDI</b><small>Dashboard vivo</small></div></div>
+  <button class="nav-btn active" data-view="resumen">▦ Resumen ejecutivo</button>
+  <button class="nav-btn" data-view="proyectos">▤ Proyectos</button>
+  <button class="nav-btn" data-view="plantillas">◫ Plantillas</button>
+  <button class="nav-btn" data-view="empresas">🏢 Empresas</button>
+</aside>
+
+<main>
+  <div class="header">
+    <div><h1 id="pageTitle">Control ejecutivo de proyectos</h1><div class="subtitle" id="pageSubtitle">Los botones, tarjetas y filas filtran la información en tiempo real.</div></div>
+    <span class="badge" id="resultCount">43 proyectos</span>
+  </div>
+
+  <section id="view-resumen" class="view active">
+    <div class="kpis">
+      <div class="metric" data-action="all"><div class="label">Proyectos</div><div class="value" id="kpiProjects">43</div><div class="foot">Ver toda la cartera</div></div>
+      <div class="metric" data-action="members"><div class="label">Miembros asignados</div><div class="value" id="kpiMembers">0</div><div class="foot">Suma del filtro actual</div></div>
+      <div class="metric" data-action="companies"><div class="label">Empresas vinculadas</div><div class="value" id="kpiCompanies">0</div><div class="foot">Participaciones acumuladas</div></div>
+      <div class="metric" data-action="active"><div class="label">Activos</div><div class="value" id="kpiActive">43</div><div class="foot">Según Autodesk</div></div>
+    </div>
+
+    <div class="toolbar">
+      <button class="filter-btn active" data-template="ALL">Todos</button>
+      <button class="filter-btn" data-template="DATC-PL-C9-ACTUALIZADO">C9 actualizado</button>
+      <button class="filter-btn" data-template="DATEC-PL-01">DATEC-PL-01</button>
+      <button class="filter-btn" data-template="DATC-PL-C9 (Archived)">C9 archivado</button>
+      <button class="filter-btn" data-template="OTHER">Otras plantillas</button>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Proyectos por plantilla</h3>
+        <div id="templateBars"></div>
+      </div>
+      <div class="card">
+        <h3>Filtrar por número de empresas</h3>
+        <div class="company-grid" id="companyCards"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Proyectos filtrados</h3>
+      <div class="search-row">
+        <input id="searchMain" placeholder="Buscar código o nombre...">
+        <select id="archiveFilter">
+          <option value="">Todas las plantillas</option>
+          <option value="current">Plantillas vigentes</option>
+          <option value="archived">Plantillas archivadas</option>
+        </select>
+        <select id="membersFilter">
+          <option value="">Todos los miembros</option>
+          <option value="20">20 o menos</option>
+          <option value="21-23">21 a 23</option>
+          <option value="24+">24 o más</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th class="sortable" data-key="name">Nombre</th>
+<th class="sortable" data-key="code">Número</th>
+<th class="sortable" data-key="platform">Plataforma</th>
+<th class="sortable" data-key="members">Miembros</th>
+<th class="sortable" data-key="companies">Empresas</th>
+<th class="sortable" data-key="state">Estado</th>
+<th class="sortable" data-key="template">Plantilla usada</th>
+<th class="sortable" data-key="startDate">Fecha inicio</th>
+<th class="sortable" data-key="completionDate">Fecha fin</th>
+<th class="sortable" data-key="businessUnit">Unidad de negocio</th>
+<th class="sortable" data-key="createdOn">Creado el</th></tr></thead>
+        <tbody id="mainTable"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <section id="view-proyectos" class="view">
+    <div class="card">
+      <h3>Cartera completa</h3>
+      <div class="search-row"><input id="searchProjects" placeholder="Buscar proyecto..."><select id="projectCompany"><option value="">Todas las empresas</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+        <select id="projectArchive"><option value="">Todas las plantillas</option><option value="current">Vigentes</option><option value="archived">Archivadas</option></select></div>
+      <div class="table-wrap"><table><thead><tr><th class="sortable" data-key="name">Nombre</th>
+<th class="sortable" data-key="code">Número</th>
+<th class="sortable" data-key="platform">Plataforma</th>
+<th class="sortable" data-key="members">Miembros</th>
+<th class="sortable" data-key="companies">Empresas</th>
+<th class="sortable" data-key="state">Estado</th>
+<th class="sortable" data-key="template">Plantilla usada</th>
+<th class="sortable" data-key="startDate">Fecha inicio</th>
+<th class="sortable" data-key="completionDate">Fecha fin</th>
+<th class="sortable" data-key="businessUnit">Unidad de negocio</th>
+<th class="sortable" data-key="createdOn">Creado el</th></tr></thead><tbody id="projectsTable"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="view-plantillas" class="view">
+    <div class="card"><h3>Plantillas de la cartera</h3><div id="templateDetail"></div></div>
+  </section>
+
+  <section id="view-empresas" class="view">
+    <div class="card"><h3>Distribución por número de empresas</h3><div class="company-grid" id="companyDetail"></div></div>
+  </section>
+
+  <section id="view-detail" class="view">
+    <button class="back" id="backBtn">← Volver</button>
+    <div class="card">
+      <h3 id="detailTitle">Detalle del proyecto</h3>
+      <div class="detail-grid" id="detailGrid"></div>
+      <div class="note">Esta ficha ya es interactiva. Más adelante aquí podemos sumar Convenio, ubicación, etapa, hitos, responsables, documentos, incidencias y BIM.</div>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+const projects = [
+  {code:"043", name:"043-C09-2723673-IE 280-SHUNTE-DATEC-ED", platform:"Autodesk Forma", members:17, companies:2, state:"Active", template:"DATC-PL-C9-ACTUALIZADO", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"5/26/2026", archivedTemplate:false},
+  {code:"044", name:"044-2561914-C09-IE MD LAGUNAS-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATC-PL-C9-ACTUALIZADO", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"5/14/2026", archivedTemplate:false},
+  {code:"042", name:"042-C09-2651108-IE YUNGUYO-DATEC-ED", platform:"Autodesk Forma", members:21, companies:2, state:"Active", template:"DATC-PL-C9-ACTUALIZADO", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"4/29/2026", archivedTemplate:false},
+  {code:"041", name:"041-C09-2651108-IE MD ONGOY-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATC-PL-C9-ACTUALIZADO", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"4/29/2026", archivedTemplate:false},
+  {code:"040", name:"040-2657601-IE 1180 ROBLE-DATEC-ED", platform:"Autodesk Forma", members:22, companies:3, state:"Active", template:"DATC-PL-C9-ACTUALIZADO", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"4/27/2026", archivedTemplate:false},
+  {code:"000", name:"REPOSITORIO OEDI", platform:"Autodesk Forma", members:15, companies:3, state:"Active", template:"-", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"4/17/2026", archivedTemplate:false},
+  {code:"039", name:"039-2657125-IE 32440 CHAVÍN DE PARIARCA-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATC-PL-C9-ACTUALIZADO", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"4/7/2026", archivedTemplate:false},
+  {code:"038", name:"038-2635593-SANTA ROSA CANTA-DATEC-DR", platform:"Autodesk Forma", members:22, companies:2, state:"Active", template:"DATC-PL-C9-ACTUALIZADO", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"4/7/2026", archivedTemplate:false},
+  {code:"037", name:"037-2665336-IE QOTAQWASI DISTRITO DE LAYO-DATEC-RF", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATC-PL-C9-ACTUALIZADO", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"4/7/2026", archivedTemplate:false},
+  {code:"036", name:"036-C09-2689971-IE 38600 MD SANTA ROSA-ED", platform:"Autodesk Forma", members:21, companies:2, state:"Active", template:"DATC-PL-C9-ACTUALIZADO", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"3/23/2026", archivedTemplate:false},
+  {code:"035", name:"035-2664842-IE 248 RANRACANCHA-DATEC-ED", platform:"Autodesk Forma", members:24, companies:4, state:"Active", template:"DATC-PL-C9-ACTUALIZADO", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"3/17/2026", archivedTemplate:false},
+  {code:"034", name:"034-C09-2658378-IE SEBASTIAN LORENTE TAYACAJA-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATC-PL-C9-ACTUALIZADO", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"3/17/2026", archivedTemplate:false},
+  {code:"033", name:"033-C09-2610604-IE 297 MD TINTAY PUNCU-DATEC-ED", platform:"Autodesk Forma", members:25, companies:4, state:"Active", template:"DATC-PL-C9-ACTUALIZADO", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"2/27/2026", archivedTemplate:false},
+  {code:"032", name:"032-C09-2601002-VIAL SAN CARLOS-DATEC-CA", platform:"Autodesk Forma", members:23, companies:4, state:"Active", template:"DATC-PL-C9-ACTUALIZADO", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"2/24/2026", archivedTemplate:false},
+  {code:"028", name:"028-C09-2619538-IE MARISCAL MILLER VICCO-ED", platform:"Autodesk Forma", members:21, companies:4, state:"Active", template:"DATC-PL-C09-ACT (Archived)", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"1/22/2026", archivedTemplate:true},
+  {code:"027", name:"027-C09-2627074-IE BOLOGNESI VICCO-ED", platform:"Autodesk Forma", members:21, companies:4, state:"Active", template:"DATC-PL-C09-ACT (Archived)", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"1/22/2026", archivedTemplate:true},
+  {code:"006", name:"006-C07-2497437-IE PEDRO ATUSPARIA-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-C7_C8", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"1/16/2026", archivedTemplate:false},
+  {code:"031", name:"031-C09-2704064-VIAL YUNGUYO-DATEC-CA", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-C9 (Archived)", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"1/16/2026", archivedTemplate:true},
+  {code:"030", name:"030-C09-2681842-IE PAMPAMARCA-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-C9 (Archived)", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"1/8/2026", archivedTemplate:true},
+  {code:"029", name:"029-C09-2643152-IE MOISES DIPAZ-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-C9 (Archived)", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"1/8/2026", archivedTemplate:true},
+  {code:"026", name:"026-C09-2665731-IE PUNCHAO-DATEC-ED", platform:"Autodesk Forma", members:27, companies:4, state:"Active", template:"DATEC-PL-C9 (Archived)", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"12/3/2025", archivedTemplate:true},
+  {code:"007", name:"007-C07-355442-C5 JAUNA-DATEC-SAL", platform:"Autodesk Forma", members:27, companies:5, state:"Active", template:"DATEC-PL-C7_C8", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"11/25/2025", archivedTemplate:false},
+  {code:"025", name:"025-C09-2448155-MD ROCCHAC-DATEC-SAN", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-C9 (Archived)", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"11/7/2025", archivedTemplate:true},
+  {code:"024", name:"024-C09-2673997-CARAVELI-DATEC-SAN", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-C9 (Archived)", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"11/7/2025", archivedTemplate:true},
+  {code:"023", name:"023-C09-2444567-VIAL ALCOMARCA-DATEC-CA", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-C9 (Archived)", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/27/2025", archivedTemplate:true},
+  {code:"022", name:"022-C09-2605027-IE38984-8 CARMEN ALTO-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-C9 (Archived)", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/27/2025", archivedTemplate:true},
+  {code:"000", name:"000-C09-PROYECTO PRUEBA-DATEC-ED", platform:"Autodesk Forma", members:15, companies:3, state:"Active", template:"DATEC-PL-C9 (Archived)", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/21/2025", archivedTemplate:true},
+  {code:"003", name:"003-C07-260973-IE SECTOR TERESA-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/15/2025", archivedTemplate:false},
+  {code:"021", name:"021-C08-3354363-IE 126 COCHABAMBA-DATEC-ED", platform:"Autodesk Forma", members:27, companies:4, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/10/2025", archivedTemplate:false},
+  {code:"020", name:"020-C08-225202-IE 432 111 JESUS NAZARENO-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/10/2025", archivedTemplate:false},
+  {code:"015", name:"015-C09-2402189-IE-INKAWASI-DATEC-ED", platform:"Autodesk Forma", members:24, companies:4, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/10/2025", archivedTemplate:false},
+  {code:"009", name:"009-C08-287058-IE 04740 NVO LORETO-DATEC-ED", platform:"Autodesk Forma", members:24, companies:4, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/10/2025", archivedTemplate:false},
+  {code:"004", name:"004-C07-358505-IE 38467 JUANCA SANCOS-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/10/2025", archivedTemplate:false},
+  {code:"014", name:"014-C09-2657388-INKAWASI-DATEC-RI", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/10/2025", archivedTemplate:false},
+  {code:"019", name:"019-C09-2539380-IE TUPAC AMARU HUACAYBAMBA-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/3/2025", archivedTemplate:false},
+  {code:"018", name:"018-C09-2537123-IE 33048 HUACAYBAMBA-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/2/2025", archivedTemplate:false},
+  {code:"010", name:"010-C07-290161-SANTO DOMINGO-DATEC-CA", platform:"Autodesk Forma", members:24, companies:3, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/2/2025", archivedTemplate:false},
+  {code:"013", name:"013-C09-2617428-IE JUAN JOSE ECHEVARRIA-DATEC-ED", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/2/2025", archivedTemplate:false},
+  {code:"016", name:"016-C08-350602-EL CENEPA-DATEC-SAN", platform:"Autodesk Forma", members:21, companies:2, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/2/2025", archivedTemplate:false},
+  {code:"001", name:"001-C07-2505441-IE BASILIO AUQUI-DATEC-ED", platform:"Autodesk Forma", members:26, companies:3, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/2/2025", archivedTemplate:false},
+  {code:"017", name:"017-C09-2503112-CS HUACCANA-DATEC-SAL", platform:"Autodesk Forma", members:23, companies:3, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"10/1/2025", archivedTemplate:false},
+  {code:"011", name:"011-C09-2623940-IE 34046 MD VICCO-DATEC-ED", platform:"Autodesk Forma", members:24, companies:4, state:"Active", template:"DATEC-PL-01", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"9/23/2025", archivedTemplate:false},
+  {code:"012", name:"012-C09-2619539-IE 34106 MD VICCO-DATEC-ED", platform:"Autodesk Forma", members:24, companies:3, state:"Active", template:"SUP (Archived)", startDate:"-", completionDate:"-", businessUnit:"-", createdOn:"9/22/2025", archivedTemplate:true}
+];
+
+let state={template:"ALL", companies:"", search:"", members:"", archive:""};
+let previousView="resumen";
+
+function cleanTemplate(t){
+  return t.replace("DATC-PL-C9-ACTUALIZADO","C9 actualizado")
+          .replace("DATC-PL-C9 (Archived)","C9 archivado")
+          .replace("DATC-PL-C09-ACT (Archived)","C09 ACT archivado");
+}
+
+function getFiltered(){
+ return projects.filter(p=>{
+   const tpl=state.template==="ALL" || (state.template==="OTHER" ? !["DATC-PL-C9-ACTUALIZADO","DATEC-PL-01","DATC-PL-C9 (Archived)"].includes(p.template) : p.template===state.template);
+   const comp=!state.companies || String(p.companies)===String(state.companies);
+   const q=(p.code+" "+p.name+" "+p.template+" "+p.createdOn).toLowerCase().includes(state.search.toLowerCase());
+   const arch=!state.archive || (state.archive==="archived" ? p.archivedTemplate : !p.archivedTemplate);
+   let mem=true;
+   if(state.members==="20") mem=p.members<=20;
+   if(state.members==="21-23") mem=p.members>=21 && p.members<=23;
+   if(state.members==="24+") mem=p.members>=24;
+   return tpl && comp && q && mem && arch;
+ });
+}
+
+
+const tableSort = new WeakMap();
+
+function sortRows(rows, key, direction){
+  return [...rows].sort((a,b)=>{
+    let av = key==="state" ? "Activo" : a[key];
+    let bv = key==="state" ? "Activo" : b[key];
+    if(key==="createdOn"){
+      av = new Date(av); bv = new Date(bv);
+      return direction==="asc" ? av-bv : bv-av;
+    }
+    if(key==="members" || key==="companies"){
+      av = Number(av); bv = Number(bv);
+      return direction==="asc" ? av-bv : bv-av;
+    }
+    av = String(av ?? "").toLocaleLowerCase("es");
+    bv = String(bv ?? "").toLocaleLowerCase("es");
+    return direction==="asc"
+      ? av.localeCompare(bv,"es",{numeric:true,sensitivity:"base"})
+      : bv.localeCompare(av,"es",{numeric:true,sensitivity:"base"});
+  });
+}
+
+function applySortToTable(tbody, rows){
+  const table = tbody.closest("table");
+  const sort = tableSort.get(table);
+  return sort ? sortRows(rows, sort.key, sort.direction) : rows;
+}
+
+function updateSortIndicators(table){
+  const sort = tableSort.get(table);
+  table.querySelectorAll("th.sortable").forEach(th=>{
+    th.classList.remove("sort-asc","sort-desc");
+    if(sort && th.dataset.key===sort.key){
+      th.classList.add(sort.direction==="asc" ? "sort-asc" : "sort-desc");
+    }
+  });
+}
+
+function enableTableSorting(table){
+  table.querySelectorAll("th.sortable").forEach(th=>{
+    th.addEventListener("click",()=>{
+      const current = tableSort.get(table);
+      const direction = current && current.key===th.dataset.key && current.direction==="asc" ? "desc" : "asc";
+      tableSort.set(table,{key:th.dataset.key,direction});
+      updateSortIndicators(table);
+
+      if(table.querySelector("tbody").id==="mainTable"){
+        renderTable(document.getElementById("mainTable"), getFiltered());
+      } else {
+        const q=document.getElementById("searchProjects").value.toLowerCase();
+        const c=document.getElementById("projectCompany").value;
+        const rows=projects.filter(p=>(p.code+" "+p.name).toLowerCase().includes(q)&&(!c||String(p.companies)===c));
+        renderTable(document.getElementById("projectsTable"), rows);
+      }
+    });
+  });
+}
+
+function renderTable(tbody, rows){
+ tbody.innerHTML="";
+ rows = applySortToTable(tbody, rows);
+ rows.forEach(p=>{
+   const tr=document.createElement("tr"); tr.className="clickable-row";
+   tr.innerHTML=`<td>${p.name}</td><td><b>${p.code}</b></td><td>${p.platform}</td><td>${p.members}</td><td>${p.companies}</td><td><span class="status">${p.state}</span></td><td><span class="badge">${cleanTemplate(p.template)}</span></td><td>${p.startDate}</td><td>${p.completionDate}</td><td>${p.businessUnit}</td><td>${p.createdOn}</td>`;
+   tr.addEventListener("click",()=>openDetail(p));
+   tbody.appendChild(tr);
+ });
+}
+
+function render(){
+ const rows=getFiltered();
+ document.getElementById("resultCount").textContent=`${rows.length} proyectos`;
+ document.getElementById("kpiProjects").textContent=rows.length;
+ document.getElementById("kpiMembers").textContent=rows.reduce((a,p)=>a+p.members,0);
+ document.getElementById("kpiCompanies").textContent=rows.reduce((a,p)=>a+p.companies,0);
+ document.getElementById("kpiActive").textContent=rows.length;
+ renderTable(document.getElementById("mainTable"),rows);
+ renderBars(rows);
+ renderCompanyCards(rows);
+}
+
+function renderBars(rows){
+ const counts={}; rows.forEach(p=>counts[p.template]=(counts[p.template]||0)+1);
+ const max=Math.max(1,...Object.values(counts));
+ const box=document.getElementById("templateBars"); box.innerHTML="";
+ Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
+   const div=document.createElement("div"); div.className="bar-item";
+   div.innerHTML=`<span>${cleanTemplate(k)}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><b>${v}</b>`;
+   div.style.cursor="pointer";
+   div.addEventListener("click",()=>{state.template=k; syncTemplateButtons(); render();});
+   box.appendChild(div);
+ });
+}
+
+function renderCompanyCards(rows){
+ const counts={2:0,3:0,4:0,5:0}; rows.forEach(p=>counts[p.companies]=(counts[p.companies]||0)+1);
+ const box=document.getElementById("companyCards"); box.innerHTML="";
+ Object.entries(counts).forEach(([k,v])=>{
+   const d=document.createElement("button"); d.className="company-card"+(String(state.companies)===k?" active":"");
+   d.innerHTML=`<b>${v}</b><span>${k} empresas</span>`;
+   d.addEventListener("click",()=>{state.companies=String(state.companies)===k?"":k; render();});
+   box.appendChild(d);
+ });
+}
+
+function syncTemplateButtons(){
+ document.querySelectorAll("[data-template]").forEach(b=>b.classList.toggle("active",b.dataset.template===state.template));
+}
+
+function openDetail(p){
+ previousView=document.querySelector(".view.active")?.id.replace("view-","")||"resumen";
+ document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+ document.getElementById("view-detail").classList.add("active");
+ document.getElementById("backBtn").style.display="inline-block";
+ document.getElementById("pageTitle").textContent=`Proyecto ${p.code}`;
+ document.getElementById("pageSubtitle").textContent=p.name;
+ document.getElementById("detailTitle").textContent=p.name;
+ document.getElementById("detailGrid").innerHTML=`
+  <div class="detail-item"><span>Número</span><b>${p.code}</b></div>
+  <div class="detail-item"><span>Estado</span><b>${p.state}</b></div>
+  <div class="detail-item"><span>Plataforma</span><b>${p.platform}</b></div>
+  <div class="detail-item"><span>Miembros</span><b>${p.members}</b></div>
+  <div class="detail-item"><span>Empresas</span><b>${p.companies}</b></div>
+  <div class="detail-item"><span>Plantilla usada</span><b>${cleanTemplate(p.template)}</b></div>
+  <div class="detail-item"><span>Fecha inicio</span><b>${p.startDate}</b></div>
+  <div class="detail-item"><span>Fecha fin</span><b>${p.completionDate}</b></div>
+  <div class="detail-item"><span>Unidad de negocio</span><b>${p.businessUnit}</b></div>
+  <div class="detail-item"><span>Creado el</span><b>${p.createdOn}</b></div>
+  <div class="detail-item"><span>Tipo de plantilla</span><b>${p.archivedTemplate ? "Archivada" : "Vigente"}</b></div>`;
+}
+
+function showView(name){
+ document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+ document.getElementById("view-"+name).classList.add("active");
+ document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.view===name));
+ document.getElementById("pageTitle").textContent=name==="resumen"?"Control ejecutivo de proyectos":name.charAt(0).toUpperCase()+name.slice(1);
+ document.getElementById("pageSubtitle").textContent=name==="resumen"?"Los botones, tarjetas y filas filtran la información en tiempo real.":"Vista interactiva de la cartera OEDI.";
+ if(name==="proyectos") renderTable(document.getElementById("projectsTable"),projects);
+ if(name==="plantillas") renderTemplateDetail();
+ if(name==="empresas") renderCompanyDetail();
+}
+
+function renderTemplateDetail(){
+ const counts={}; projects.forEach(p=>counts[p.template]=(counts[p.template]||0)+1);
+ const box=document.getElementById("templateDetail"); box.innerHTML="";
+ const max=Math.max(...Object.values(counts));
+ Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
+   const d=document.createElement("div"); d.className="bar-item";
+   d.innerHTML=`<span>${cleanTemplate(k)}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><b>${v}</b>`;
+   d.style.cursor="pointer"; d.addEventListener("click",()=>{state={template:k,companies:"",search:"",members:"",archive:""}; showView("resumen"); syncTemplateButtons(); render();});
+   box.appendChild(d);
+ });
+}
+
+function renderCompanyDetail(){
+ const counts={}; projects.forEach(p=>counts[p.companies]=(counts[p.companies]||0)+1);
+ const box=document.getElementById("companyDetail"); box.innerHTML="";
+ Object.entries(counts).sort((a,b)=>Number(a[0])-Number(b[0])).forEach(([k,v])=>{
+   const d=document.createElement("button"); d.className="company-card";
+   d.innerHTML=`<b>${v}</b><span>Proyectos con ${k} empresas</span>`;
+   d.addEventListener("click",()=>{state={template:"ALL",companies:k,search:"",members:"",archive:""}; showView("resumen"); syncTemplateButtons(); render();});
+   box.appendChild(d);
+ });
+}
+
+document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
+document.querySelectorAll("[data-template]").forEach(b=>b.addEventListener("click",()=>{state.template=b.dataset.template;syncTemplateButtons();render();}));
+document.querySelectorAll(".metric").forEach(m=>m.addEventListener("click",()=>{state={template:"ALL",companies:"",search:"",members:"",archive:""};syncTemplateButtons();render();}));
+document.getElementById("searchMain").addEventListener("input",e=>{state.search=e.target.value;render();});
+document.getElementById("membersFilter").addEventListener("change",e=>{state.members=e.target.value;render();});
+document.getElementById("archiveFilter").addEventListener("change",e=>{state.archive=e.target.value;render();});
+document.getElementById("searchProjects").addEventListener("input",e=>{
+ const q=e.target.value.toLowerCase(), c=document.getElementById("projectCompany").value, a=document.getElementById("projectArchive").value;
+ renderTable(document.getElementById("projectsTable"),projects.filter(p=>(p.code+" "+p.name+" "+p.template+" "+p.createdOn).toLowerCase().includes(q)&&(!c||String(p.companies)===c)&&(!a||(a==="archived"?p.archivedTemplate:!p.archivedTemplate))));
+});
+document.getElementById("projectCompany").addEventListener("change",()=>document.getElementById("searchProjects").dispatchEvent(new Event("input")));
+document.getElementById("projectArchive").addEventListener("change",()=>document.getElementById("searchProjects").dispatchEvent(new Event("input")));
+document.getElementById("backBtn").addEventListener("click",()=>showView(previousView));
+document.querySelectorAll("table").forEach(enableTableSorting);
+render();
+</script>
+</body>
+</html>
