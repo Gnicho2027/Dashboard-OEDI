@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard OEDI - Encuesta de Satisfacción</title>
+<style>
+:root{
+  --bg:#f2f5f9; --panel:#fff; --text:#172033; --muted:#667085; --border:#dfe5ec;
+  --navy:#153a68; --blue:#2262c6; --blue2:#5a9be6; --green:#2ca46f;
+  --yellow:#e6b33d; --red:#d85858; --shadow:0 2px 10px rgba(22,50,86,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text)}
+.header{
+  background:linear-gradient(110deg,#153a68,#2466aa); color:#fff;
+  padding:18px 24px; display:flex; justify-content:space-between; align-items:center; gap:20px
+}
+.header h1{margin:0;font-size:24px}.header p{margin:5px 0 0;font-size:12px;opacity:.88}
+.header .tag{font-size:11px;padding:7px 10px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:rgba(255,255,255,.1)}
+.shell{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100vh - 76px)}
+.sidebar{background:#fff;border-right:1px solid var(--border);padding:16px 13px}
+.sidebar h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin:0 0 13px;color:#475467}
+.slice{margin-bottom:18px}.slice-title{font-size:11px;font-weight:700;color:#667085;margin-bottom:6px}
+.slice-list{display:flex;flex-direction:column;gap:6px}
+.slice button,.reset{
+  width:100%;border:1px solid #d8e0ea;background:#fff;color:#344054;border-radius:7px;
+  padding:8px 9px;text-align:left;font-size:11px;cursor:pointer
+}
+.slice button.active{background:#e9f2ff;border-color:#7eacf0;color:#164a98;font-weight:700}
+.reset{background:#153a68;color:white;text-align:center;border-color:#153a68}
+.main{padding:14px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.kpi,.panel,.dept-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)}
+.kpi{padding:12px 14px}.kpi-l{font-size:10px;color:#667085;text-transform:uppercase;font-weight:700}
+.kpi-v{font-size:24px;color:#153a68;font-weight:800;margin:3px 0}.kpi-s{font-size:10px;color:#98a2b3}
+.panel{padding:13px;margin-bottom:12px}
+.phead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}
+.phead h2{font-size:14px;margin:0}.phead p{font-size:10px;color:#98a2b3;margin:3px 0 0}
+.chip{font-size:9px;padding:4px 7px;border-radius:999px;background:#eef4ff;color:#2458a6;white-space:nowrap}
+.dept-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:12px}
+.dept-card{padding:13px;min-width:0}
+.dept-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.dept-title h2{margin:0;font-size:15px;color:#153a68}
+.global-pill{font-size:10px;font-weight:700;padding:4px 7px;border-radius:999px;background:#e8f6ef;color:#17724c}
+.metric-list{display:flex;flex-direction:column;gap:10px}
+.metric-row{display:grid;grid-template-columns:minmax(0,1fr) 45px;gap:9px;align-items:center}
+.metric-name{font-size:10px;color:#475467;margin-bottom:4px}
+.stack{height:12px;border-radius:999px;overflow:hidden;display:flex;background:#edf1f5}
+.s1{background:#2262c6}.s2{background:#6da7e8}.s3{background:#e6b33d}.s4{background:#d85858}
+.metric-val{font-size:11px;font-weight:800;text-align:right;color:#173d6f}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:9px;color:#667085;margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:5px}.dot{width:8px;height:8px;border-radius:2px;display:inline-block}
+.row2{display:grid;grid-template-columns:1.25fr 1fr;gap:12px;margin-bottom:12px}
+canvas{display:block;width:100%;height:270px}
+.table-wrap{overflow:auto;max-height:380px}
+table{width:100%;border-collapse:collapse;font-size:10px}
+th,td{padding:8px;border-bottom:1px solid #e9edf2;text-align:center}
+th:first-child,td:first-child{text-align:left;min-width:240px}
+th{background:#f8fafc;position:sticky;top:0;z-index:1}
+.cell{display:inline-block;min-width:44px;padding:5px 6px;border-radius:6px;font-weight:700}
+.high{background:#ddf4e8;color:#176640}.mid{background:#fff2ca;color:#7e5e00}.low{background:#fde1e1;color:#9b2f2f}
+.insight{font-size:10.5px;line-height:1.42;padding:9px;border-left:3px solid #2a66b4;background:#f6f9fe;border-radius:6px;margin-bottom:7px}
+.note{font-size:9.5px;color:#667085;margin-top:8px}
+@media(max-width:1180px){.dept-grid{grid-template-columns:1fr}.row2{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.shell{grid-template-columns:1fr}.sidebar{border-right:0;border-bottom:1px solid var(--border)}.slice-list{flex-direction:row;flex-wrap:wrap}.kpis{grid-template-columns:1fr 1fr}.header{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>Encuesta de Satisfacción de Capacitaciones</h1>
+    <p>OEDI · Resultados comparativos por departamento</p>
+  </div>
+  <div class="tag">Vista ejecutiva · estilo Power BI</div>
+</div>
+
+<div class="shell">
+  <aside class="sidebar">
+    <h3>Filtros</h3>
+
+    <div class="slice">
+      <div class="slice-title">Departamento</div>
+      <div class="slice-list" id="deptFilter">
+        <button data-v="ALL" class="active">Todos</button>
+        <button data-v="PUNO">Puno</button>
+        <button data-v="AYACUCHO">Ayacucho</button>
+        <button data-v="LORETO">Loreto</button>
+      </div>
+    </div>
+
+    <div class="slice">
+      <div class="slice-title">Visualización</div>
+      <div class="slice-list" id="viewFilter">
+        <button data-v="positive" class="active">Satisfacción positiva</button>
+        <button data-v="very">Muy satisfecho</button>
+        <button data-v="regular">Regular</button>
+        <button data-v="negative">Insatisfecho</button>
+      </div>
+    </div>
+
+    <button class="reset" id="reset">Restablecer</button>
+  </aside>
+
+  <main class="main">
+    <section class="kpis">
+      <div class="kpi"><div class="kpi-l">Promedio satisfacción positiva</div><div class="kpi-v" id="kpiAvg">-</div><div class="kpi-s">Promedio de los 5 indicadores</div></div>
+      <div class="kpi"><div class="kpi-l">Satisfacción global</div><div class="kpi-v" id="kpiGlobal">-</div><div class="kpi-s">Respuesta Sí</div></div>
+      <div class="kpi"><div class="kpi-l">Mejor indicador</div><div class="kpi-v" id="kpiBest">-</div><div class="kpi-s" id="kpiBestSub">-</div></div>
+      <div class="kpi"><div class="kpi-l">Mayor oportunidad</div><div class="kpi-v" id="kpiWeak">-</div><div class="kpi-s" id="kpiWeakSub">-</div></div>
+    </section>
+
+    <section class="panel">
+      <div class="phead">
+        <div><h2>Todos los indicadores por departamento</h2><p>Cada bloque muestra los cinco indicadores y la satisfacción global del departamento.</p></div>
+        <span class="chip" id="activeDept">Todos los departamentos</span>
+      </div>
+
+      <div class="dept-grid" id="deptGrid"></div>
+
+      <div class="legend">
+        <span><i class="dot s1"></i>Muy satisfecho</span>
+        <span><i class="dot s2"></i>Satisfecho</span>
+        <span><i class="dot s3"></i>Regular</span>
+        <span><i class="dot s4"></i>Insatisfecho</span>
+      </div>
+    </section>
+
+    <section class="row2">
+      <div class="panel">
+        <div class="phead">
+          <div><h2>Comparación de indicadores entre departamentos</h2><p>Todos los criterios visibles al mismo tiempo.</p></div>
+          <span class="chip" id="viewChip">Satisfacción positiva</span>
+        </div>
+        <canvas id="compareChart"></canvas>
+      </div>
+
+      <div class="panel">
+        <div class="phead">
+          <div><h2>Lectura ejecutiva</h2><p>Principales fortalezas y brechas.</p></div>
+        </div>
+        <div id="insights"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="phead">
+        <div><h2>Matriz completa de resultados</h2><p>Detalle porcentual por indicador y departamento.</p></div>
+      </div>
+      <div class="table-wrap"><table id="matrix"></table></div>
+      <div class="note">La fuente disponible no contiene fechas de medición, por lo que la lectura de “tendencias” es comparativa entre departamentos e indicadores, no temporal.</div>
+    </section>
+  </main>
+</div>
+
+<script>
+const DATA={
+ PUNO:{
+  clarity:[21,61,18,0], examples:[32,46,18,4], applicability:[25,57,14,4],
+  expositor:[21,61,18,0], needs:[25,50,25,0], overall:86
+ },
+ AYACUCHO:{
+  clarity:[56,39,5,0], examples:[44,50,6,0], applicability:[39,50,11,0],
+  expositor:[45,44,11,0], needs:[44,50,6,0], overall:100
+ },
+ LORETO:{
+  clarity:[72,28,0,0], examples:[67,33,0,0], applicability:[78,22,0,0],
+  expositor:[72,28,0,0], needs:[67,33,0,0], overall:100
+ }
+};
+
+const LONG={
+ clarity:"Contenidos claros y entendibles",
+ examples:"Ejemplos y casos prácticos",
+ applicability:"Aplicabilidad en las funciones",
+ expositor:"Explicación de conceptos BIM",
+ needs:"Respuesta a necesidades laborales"
+};
+const SHORT={clarity:"Claridad",examples:"Ejemplos",applicability:"Aplicabilidad",expositor:"Conceptos BIM",needs:"Necesidades"};
+const QS=["clarity","examples","applicability","expositor","needs"];
+const DEPTS=["PUNO","AYACUCHO","LORETO"];
+const COLORS={PUNO:"#2262c6",AYACUCHO:"#38a3d5",LORETO:"#2ca46f"};
+
+let state={dept:"ALL",view:"positive"};
+const positive=a=>a[0]+a[1];
+const metric=(a,v)=>v==="positive"?positive(a):v==="very"?a[0]:v==="regular"?a[2]:a[3];
+const viewName=v=>({positive:"Satisfacción positiva",very:"Muy satisfecho",regular:"Regular",negative:"Insatisfecho"})[v];
+const selected=()=>state.dept==="ALL"?DEPTS:[state.dept];
+const avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
+
+function bind(id,key){
+ document.getElementById(id).addEventListener("click",e=>{
+   if(e.target.tagName!=="BUTTON")return;
+   [...document.querySelectorAll("#"+id+" button")].forEach(b=>b.classList.remove("active"));
+   e.target.classList.add("active");
+   state[key]=e.target.dataset.v;
+   render();
+ });
+}
+bind("deptFilter","dept"); bind("viewFilter","view");
+document.getElementById("reset").addEventListener("click",()=>{
+ state={dept:"ALL",view:"positive"};
+ document.querySelectorAll("#deptFilter button").forEach(b=>b.classList.toggle("active",b.dataset.v==="ALL"));
+ document.querySelectorAll("#viewFilter button").forEach(b=>b.classList.toggle("active",b.dataset.v==="positive"));
+ render();
+});
+
+function renderDeptCards(){
+ const html=selected().map(d=>{
+   let rows=QS.map(q=>{
+     const a=DATA[d][q],pos=positive(a);
+     return `<div class="metric-row">
+       <div>
+         <div class="metric-name">${LONG[q]}</div>
+         <div class="stack">
+           <div class="s1" style="width:${a[0]}%"></div>
+           <div class="s2" style="width:${a[1]}%"></div>
+           <div class="s3" style="width:${a[2]}%"></div>
+           <div class="s4" style="width:${a[3]}%"></div>
+         </div>
+       </div>
+       <div class="metric-val">${pos}%</div>
+     </div>`;
+   }).join("");
+   return `<div class="dept-card">
+      <div class="dept-title"><h2>${d}</h2><span class="global-pill">Global ${DATA[d].overall}%</span></div>
+      <div class="metric-list">${rows}</div>
+   </div>`;
+ }).join("");
+ document.getElementById("deptGrid").innerHTML=html;
+ document.getElementById("activeDept").textContent=state.dept==="ALL"?"Todos los departamentos":state.dept;
+}
+
+function renderKPIs(){
+ const ds=selected();
+ const allValues=[];
+ ds.forEach(d=>QS.forEach(q=>allValues.push(positive(DATA[d][q]))));
+ const global=avg(ds.map(d=>DATA[d].overall));
+ const byQ=QS.map(q=>[q,avg(ds.map(d=>positive(DATA[d][q])))]);
+ byQ.sort((a,b)=>b[1]-a[1]);
+ document.getElementById("kpiAvg").textContent=avg(allValues).toFixed(1)+"%";
+ document.getElementById("kpiGlobal").textContent=global.toFixed(1)+"%";
+ document.getElementById("kpiBest").textContent=byQ[0][1].toFixed(1)+"%";
+ document.getElementById("kpiBestSub").textContent=SHORT[byQ[0][0]];
+ document.getElementById("kpiWeak").textContent=byQ[byQ.length-1][1].toFixed(1)+"%";
+ document.getElementById("kpiWeakSub").textContent=SHORT[byQ[byQ.length-1][0]];
+}
+
+function setupCanvas(){
+ const c=document.getElementById("compareChart"),r=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+ c.width=Math.floor(r.width*dpr);c.height=Math.floor(r.height*dpr);
+ const ctx=c.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
+ return {ctx,w:r.width,h:r.height};
+}
+function txt(ctx,t,x,y,align="left",size=10,color="#667085",bold=false){
+ ctx.fillStyle=color;ctx.font=(bold?"700 ":"400 ")+size+"px Segoe UI";ctx.textAlign=align;ctx.fillText(t,x,y);
+}
+function drawChart(){
+ const {ctx,w,h}=setupCanvas();ctx.clearRect(0,0,w,h);
+ const ds=selected(),left=42,right=14,top=18,bottom=48,cw=w-left-right,ch=h-top-bottom;
+ ctx.strokeStyle="#edf1f5";
+ for(let i=0;i<=5;i++){let y=top+ch-i*ch/5;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();txt(ctx,(i*20)+"%",left-6,y+3,"right",9)}
+ const groupW=cw/QS.length,barW=Math.min(26,(groupW-14)/Math.max(1,ds.length));
+ QS.forEach((q,qi)=>{
+   const gx=left+qi*groupW;
+   ds.forEach((d,di)=>{
+     const v=metric(DATA[d][q],state.view),bh=ch*v/100,x=gx+groupW/2-(ds.length*barW)/2+di*barW,y=top+ch-bh;
+     ctx.fillStyle=COLORS[d];ctx.fillRect(x,y,barW-3,bh);
+     if(v>=8)txt(ctx,v+"%",x+(barW-3)/2,Math.max(11,y-4),"center",8,"#172033",true);
+   });
+   txt(ctx,SHORT[q],gx+groupW/2,h-27,"center",9,"#475467",true);
+ });
+ let lx=left;
+ ds.forEach(d=>{ctx.fillStyle=COLORS[d];ctx.fillRect(lx,h-12,9,9);txt(ctx,d,lx+13,h-4,"left",8,"#475467",true);lx+=78});
+ document.getElementById("viewChip").textContent=viewName(state.view);
+}
+
+function renderInsights(){
+ const ds=selected();
+ let items=[];
+ const deptScores=ds.map(d=>[d,avg(QS.map(q=>positive(DATA[d][q])))])
+   .sort((a,b)=>b[1]-a[1]);
+ if(ds.length>1){
+   items.push(`<b>${deptScores[0][0]}</b> presenta el mejor promedio de satisfacción positiva: <b>${deptScores[0][1].toFixed(1)}%</b>.`);
+ }
+ const all=[];
+ ds.forEach(d=>QS.forEach(q=>all.push({d,q,pos:positive(DATA[d][q]),reg:DATA[d][q][2],neg:DATA[d][q][3]})));
+ const best=[...all].sort((a,b)=>b.pos-a.pos)[0];
+ const weak=[...all].sort((a,b)=>a.pos-b.pos)[0];
+ const reg=[...all].sort((a,b)=>b.reg-a.reg)[0];
+ const neg=[...all].sort((a,b)=>b.neg-a.neg)[0];
+ items.push(`El mejor resultado observado es <b>${best.pos}%</b> en <b>${best.d}</b>, indicador <b>${SHORT[best.q]}</b>.`);
+ items.push(`La principal oportunidad de mejora está en <b>${weak.d}</b>, indicador <b>${SHORT[weak.q]}</b>, con <b>${weak.pos}%</b> de satisfacción positiva.`);
+ items.push(`La mayor proporción de respuestas <b>Regular</b> es <b>${reg.reg}%</b> en ${reg.d}, ${SHORT[reg.q]}.`);
+ items.push(neg.neg>0?`La mayor proporción de <b>Insatisfecho</b> es <b>${neg.neg}%</b> en ${neg.d}, ${SHORT[neg.q]}.`:`No se registran respuestas Insatisfecho en la selección actual.`);
+ document.getElementById("insights").innerHTML=items.map(x=>`<div class="insight">${x}</div>`).join("");
+}
+
+function renderMatrix(){
+ const ds=selected();
+ let html=`<thead><tr><th>Indicador</th>${ds.map(d=>`<th colspan="5">${d}</th>`).join("")}</tr>
+ <tr><th></th>${ds.map(()=>`<th>Muy Sat.</th><th>Sat.</th><th>Regular</th><th>Insat.</th><th>Positivo</th>`).join("")}</tr></thead><tbody>`;
+ QS.forEach(q=>{
+   html+=`<tr><td>${LONG[q]}</td>`;
+   ds.forEach(d=>{
+     const a=DATA[d][q],p=positive(a),cls=p>=95?"high":p>=85?"mid":"low";
+     html+=`<td>${a[0]}%</td><td>${a[1]}%</td><td>${a[2]}%</td><td>${a[3]}%</td><td><span class="cell ${cls}">${p}%</span></td>`;
+   });
+   html+="</tr>";
+ });
+ html+=`<tr><td><b>Satisfacción global</b></td>${ds.map(d=>`<td colspan="5"><span class="cell high">${DATA[d].overall}% Sí</span></td>`).join("")}</tr>`;
+ html+="</tbody>";
+ document.getElementById("matrix").innerHTML=html;
+}
+
+function render(){renderKPIs();renderDeptCards();drawChart();renderInsights();renderMatrix()}
+window.addEventListener("resize",drawChart);
+render();
+</script>
+</body>
+</html>
